@@ -6,7 +6,7 @@ This repo is the source code for paper _SRaSLR: A Novel Social Relation Aware Se
 The code is oranized as follows:
 
 ```
-C:.
+root
 ├─data              edges of service social network, service descrptions, word vectors, and labels
 │  └─embed          node embeddings produced by Node2Vec
 │          
