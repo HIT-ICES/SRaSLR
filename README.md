@@ -18,4 +18,32 @@ root
 ```
 
 ## Data
+TODO
+
+## Usage
+### Requirements
+The following packages are required:
+
+```
+torch>=1.7.1
+pytorch_lightning>=1.2.1
+numpy>=1.19.2
+gensim==3.8.3
+nltk==3.5
+scikit_learn==0.24.1
+transformers==4.5.1
+
+TODO version fix
+```
+
+### Train models
+- Clone this project
+- Go into the root of repo and install the required package listed in `requirements.txt` by:
+```commandline
+pip install -r requirement.txt
+```
+- Use `python` command to train and test the model. For example:
+```commandline
+python sraslr/SRaSLR-ALL-Cat.py
+```
 
