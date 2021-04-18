@@ -9,7 +9,7 @@ from torch.nn import functional as F
 from transformers import BertTokenizer, BertConfig, BertModel
 
 
-class Bert_MA_DATASET(torch.utils.data.Dataset):
+class SRaSLRALLDataset(torch.utils.data.Dataset):
 
     def __init__(self, input_ids, tokentype_ids, attention_mask, targets, node_ids1, node_ids2, transform=None):
         self.input_ids = np.array(input_ids, dtype=np.int32)
@@ -34,27 +34,13 @@ class Bert_MA_DATASET(torch.utils.data.Dataset):
             torch.LongTensor), torch.as_tensor(node_id2).type(torch.LongTensor)
 
 
-class BaseLine_Bert_MAGraph_Classifier(pl.LightningModule):
+class SRaSLRALLCat(pl.LightningModule):
     def __init__(self, bert_checkpoint, classes, node_embedding, node_embedding2, node_embedding_size,
                  dense_dropout=0.5, **kwargs):
         super().__init__()
         # Load model
         self.config = BertConfig.from_pretrained(bert_checkpoint)
         self.bert_encoder = BertModel.from_pretrained(bert_checkpoint, config=self.config)
-        window_size = [5, 6, 7, 8]
-        embed_size = 768
-        feature_size = 192
-        max_seq_len = 300
-        self.convs = nn.ModuleList([
-            nn.Sequential(nn.Conv1d(in_channels=embed_size,
-                                    out_channels=feature_size,
-                                    kernel_size=kernel),
-                          nn.ReLU(),
-                          nn.MaxPool1d(kernel_size=max_seq_len - kernel + 1))
-            for kernel in window_size
-        ])
-        self.text_fc = nn.Linear(in_features=feature_size * len(window_size),
-                                 out_features=768)
         self.node_encoder = nn.Embedding.from_pretrained(torch.FloatTensor(node_embedding),
                                                          freeze=False)  # don't freeze
         self.node_encoder2 = nn.Embedding.from_pretrained(torch.FloatTensor(node_embedding2), freeze=False)
@@ -68,15 +54,7 @@ class BaseLine_Bert_MAGraph_Classifier(pl.LightningModule):
 
     def forward(self, input_ids, token_type_ids, attention_mask, node_ids1, node_ids2):
         bert_output = self.bert_encoder(input_ids, token_type_ids=token_type_ids, attention_mask=attention_mask)
-        bert_output = bert_output[0]
-        # bert_output = self.convs(bert_output)
-        x = bert_output.permute(0, 2, 1)  # [batch, emb_size, seq_len]
-        outputs = [conv(x) for conv in self.convs]  # out[i]:batch_size x feature_size*1
-        # outputs中的每一个元素为：
-        # 这一步结果取决于window_sizes，有多少个元素，最后拼接出来的长度就×几
-        output = torch.cat(outputs, dim=1)  # 对应第二个维度（行）拼接起来，比如说5*2*1,5*3*1的拼接变成5*5*1
-        output = output.squeeze(-1)  # [batch, feature_size * window]
-        bert_output = self.text_fc(output)
+        bert_output = bert_output[0][:, 0]
         node_output = self.node_encoder(node_ids1)
         node_output2 = self.node_encoder2(node_ids2)
         output = torch.cat((bert_output, node_output, node_output2), 1)
@@ -85,13 +63,11 @@ class BaseLine_Bert_MAGraph_Classifier(pl.LightningModule):
 
     def configure_optimizers(self):
         bert_params = list(map(id, self.bert_encoder.parameters()))
-        en2_params = list(map(id, self.node_encoder2.parameters()))
-        base_params = filter(lambda p: id(p) not in bert_params and id(p) not in en2_params, self.parameters())
+        base_params = filter(lambda p: id(p) not in bert_params, self.parameters())
         # 分层学习
         optimizer = torch.optim.Adam([
             {"params": self.bert_encoder.parameters(), "lr": 3e-5},
-            {"params": self.node_encoder2.parameters(), "lr": 1e-4},
-            {"params": base_params, "lr": 0.001, },
+            {"params": base_params, "lr": 0.001},
         ])
         return optimizer
 
@@ -173,25 +149,25 @@ tokenizer = BertTokenizer.from_pretrained(bert_checkpoint)
 MAX_LENGTH = 300
 train_X = tokenizer(list(text_all[train_ids]), padding=True, truncation=True, max_length=MAX_LENGTH)
 train_Y = tags_all[train_ids]
-train_dataset = Bert_MA_DATASET(train_X['input_ids'], train_X['token_type_ids'], train_X['attention_mask'], train_Y,
-                                train_nodes, train_nodes2)
+train_dataset = SRaSLRALLDataset(train_X['input_ids'], train_X['token_type_ids'], train_X['attention_mask'], train_Y,
+                                 train_nodes, train_nodes2)
 
 val_X = tokenizer(list(text_all[val_ids]), padding=True, truncation=True, max_length=MAX_LENGTH)
 val_Y = tags_all[val_ids]
-val_dataset = Bert_MA_DATASET(val_X['input_ids'], val_X['token_type_ids'], val_X['attention_mask'], val_Y, val_nodes,
-                              val_nodes2)
+val_dataset = SRaSLRALLDataset(val_X['input_ids'], val_X['token_type_ids'], val_X['attention_mask'], val_Y, val_nodes,
+                               val_nodes2)
 
 test_X = tokenizer(list(text_all[test_ids]), padding=True, truncation=True, max_length=MAX_LENGTH)
 test_Y = tags_all[test_ids]
-test_dataset = Bert_MA_DATASET(test_X['input_ids'], test_X['token_type_ids'], test_X['attention_mask'], test_Y,
-                               test_nodes, test_nodes2)
+test_dataset = SRaSLRALLDataset(test_X['input_ids'], test_X['token_type_ids'], test_X['attention_mask'], test_Y,
+                                test_nodes, test_nodes2)
 
 train_dl = torch.utils.data.DataLoader(train_dataset, batch_size=16)
 val_dl = torch.utils.data.DataLoader(val_dataset, batch_size=8)
 test_dl = torch.utils.data.DataLoader(test_dataset, batch_size=4)
 
-b_all_model = BaseLine_Bert_MAGraph_Classifier(bert_checkpoint, CLASSNUM, node_embeddings.vectors,
-                                               node_embeddings2.vectors, node_embeddings.vector_size)
-trainer = pl.Trainer(max_epochs=50, gpus=1, callbacks=[EarlyStopping(monitor='val_loss')])
-trainer.fit(b_all_model, train_dl, val_dl)
-trainer.test(b_all_model, test_dl)
+model = SRaSLRALLCat(bert_checkpoint, CLASSNUM, node_embeddings.vectors, node_embeddings2.vectors,
+                     node_embeddings.vector_size)
+trainer = pl.Trainer(max_epochs=50, gpus='0', callbacks=[EarlyStopping(monitor='val_loss')])
+trainer.fit(model, train_dl, val_dl)
+trainer.test(model, test_dl)
