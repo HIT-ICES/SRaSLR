@@ -51,9 +51,6 @@ class TextCNN(pl.LightningModule):
         # x: [batch, seq_len, emb_size]
         x = x.permute(0, 2, 1)  # [batch, emb_size, seq_len]
         outputs = [conv(x) for conv in self.convs]  # out[i]:batch_size x feature_size*1
-        # every element in outputs is:
-        # [batch, emb_size, seq_len] -conv1d-> [batch, feature_size, ?] -maxpool-> [batch, feature_size, 1]
-
         output = torch.cat(outputs, dim=1)
 
         output = output.squeeze(-1)  # [batch, feature_size * window]

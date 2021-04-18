@@ -142,6 +142,4 @@ bert_model = BertClassifier(bert_checkpoint, CLASSNUM)
 
 trainer = pl.Trainer(max_epochs=50, gpus=1, callbacks=[EarlyStopping(monitor='val_loss')])
 trainer.fit(bert_model, train_dl, val_dl)
-# trainer = pl.Trainer(max_epochs=50, gpus='0', callbacks=[EarlyStopping(monitor='val_loss')])
-
-print(trainer.test(bert_model, test_dl))
+trainer.test(bert_model, test_dl)

@@ -88,8 +88,8 @@ class MMAAGraphClassifier(pl.LightningModule):
             incorrect_top1 += out["incorrect_top1"]
             correct_top5 += out["correct_top5"]
             incorrect_top5 += out["incorrect_top5"]
-        return {"acc_top1": correct_top1 / (correct_top1 + incorrect_top1),
-                "acc_top5": correct_top5 / (correct_top5 + incorrect_top5)}
+        print({"acc_top1": correct_top1 / (correct_top1 + incorrect_top1),
+               "acc_top5": correct_top5 / (correct_top5 + incorrect_top5)})
 
 
 CLASSNUM = 255

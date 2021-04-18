@@ -183,5 +183,4 @@ serv_model = ServeNet(bert_checkpoint, CLASSNUM)
 
 trainer = pl.Trainer(max_epochs=50, gpus='0', callbacks=[EarlyStopping(monitor='val_loss')])
 trainer.fit(serv_model, train_dl, val_dl)
-
 trainer.test(serv_model, test_dl)
