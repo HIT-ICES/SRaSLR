@@ -9,7 +9,7 @@ from torch.nn import functional as F
 from transformers import BertTokenizer, BertConfig, BertModel
 
 
-class Bert_MA_DATASET(torch.utils.data.Dataset):
+class SRaSLRALLDataset(torch.utils.data.Dataset):
 
     def __init__(self, input_ids, tokentype_ids, attention_mask, targets, node_ids1, node_ids2, transform=None):
         self.input_ids = np.array(input_ids, dtype=np.int32)
@@ -34,7 +34,7 @@ class Bert_MA_DATASET(torch.utils.data.Dataset):
             torch.LongTensor), torch.as_tensor(node_id2).type(torch.LongTensor)
 
 
-class BaseLine_Bert_MAGraph_Classifier(pl.LightningModule):
+class SRaSLRALLHadamard(pl.LightningModule):
     def __init__(self, bert_checkpoint, classes, node_embedding, node_embedding2, node_embedding_size,
                  dense_dropout=0.5, **kwargs):
         super().__init__()
@@ -119,7 +119,7 @@ class BaseLine_Bert_MAGraph_Classifier(pl.LightningModule):
 
 CLASSNUM = 255
 
-## load graph model
+# load graph model
 PATH = 'data/embed/ma_embedding_100.txt'
 node_embeddings = gensim.models.KeyedVectors.load_word2vec_format(PATH, binary=False)
 
@@ -149,25 +149,25 @@ tokenizer = BertTokenizer.from_pretrained(bert_checkpoint)
 MAX_LENGTH = 300
 train_X = tokenizer(list(text_all[train_ids]), padding=True, truncation=True, max_length=MAX_LENGTH)
 train_Y = tags_all[train_ids]
-train_dataset = Bert_MA_DATASET(train_X['input_ids'], train_X['token_type_ids'], train_X['attention_mask'], train_Y,
-                                train_nodes, train_nodes2)
+train_dataset = SRaSLRALLDataset(train_X['input_ids'], train_X['token_type_ids'], train_X['attention_mask'], train_Y,
+                                 train_nodes, train_nodes2)
 
 val_X = tokenizer(list(text_all[val_ids]), padding=True, truncation=True, max_length=MAX_LENGTH)
 val_Y = tags_all[val_ids]
-val_dataset = Bert_MA_DATASET(val_X['input_ids'], val_X['token_type_ids'], val_X['attention_mask'], val_Y, val_nodes,
-                              val_nodes2)
+val_dataset = SRaSLRALLDataset(val_X['input_ids'], val_X['token_type_ids'], val_X['attention_mask'], val_Y, val_nodes,
+                               val_nodes2)
 
 test_X = tokenizer(list(text_all[test_ids]), padding=True, truncation=True, max_length=MAX_LENGTH)
 test_Y = tags_all[test_ids]
-test_dataset = Bert_MA_DATASET(test_X['input_ids'], test_X['token_type_ids'], test_X['attention_mask'], test_Y,
-                               test_nodes, test_nodes2)
+test_dataset = SRaSLRALLDataset(test_X['input_ids'], test_X['token_type_ids'], test_X['attention_mask'], test_Y,
+                                test_nodes, test_nodes2)
 
 train_dl = torch.utils.data.DataLoader(train_dataset, batch_size=16)
 val_dl = torch.utils.data.DataLoader(val_dataset, batch_size=8)
 test_dl = torch.utils.data.DataLoader(test_dataset, batch_size=4)
 
-model = BaseLine_Bert_MAGraph_Classifier(bert_checkpoint, CLASSNUM, node_embeddings.vectors, node_embeddings2.vectors,
-                                         node_embeddings.vector_size)
+model = SRaSLRALLHadamard(bert_checkpoint, CLASSNUM, node_embeddings.vectors, node_embeddings2.vectors,
+                          node_embeddings.vector_size)
 trainer = pl.Trainer(max_epochs=50, gpus=1, callbacks=[EarlyStopping(monitor='val_loss')])
 trainer.fit(model, train_dl, val_dl)
 trainer.test(model, test_dl)

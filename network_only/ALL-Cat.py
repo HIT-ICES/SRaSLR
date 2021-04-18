@@ -8,7 +8,7 @@ from sklearn.model_selection import train_test_split
 import gensim
 
 
-class ALL_DATASET(torch.utils.data.Dataset):
+class ALLCatDataset(torch.utils.data.Dataset):
 
     def __init__(self, targets, node_ids1, node_ids2, transform=None):
         self.targets = np.array(targets, dtype=np.int32)
@@ -127,13 +127,13 @@ tags_all = np.array([int(line.strip()) for line in open('data/tags_id.txt').read
 
 MAX_LENGTH = 300
 train_Y = tags_all[train_ids]
-train_dataset = ALL_DATASET(train_Y, train_nodes, train_nodes2)
+train_dataset = ALLCatDataset(train_Y, train_nodes, train_nodes2)
 
 val_Y = tags_all[val_ids]
-val_dataset = ALL_DATASET(val_Y, val_nodes, val_nodes2)
+val_dataset = ALLCatDataset(val_Y, val_nodes, val_nodes2)
 
 test_Y = tags_all[test_ids]
-test_dataset = ALL_DATASET(test_Y, test_nodes, test_nodes2)
+test_dataset = ALLCatDataset(test_Y, test_nodes, test_nodes2)
 
 train_dl = torch.utils.data.DataLoader(train_dataset, batch_size=16)
 val_dl = torch.utils.data.DataLoader(val_dataset, batch_size=8)
