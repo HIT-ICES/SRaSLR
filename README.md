@@ -21,7 +21,7 @@ root
 
 All data are listed in `data/` folder.
 
-`*.edgelist`: The edge list of network *. Each line represents an edge. The first and second columns are node ids. The third column(if has) represents the weights.
+`*.edgelist`: The edge list of network *. Each line represents an edge. The first and second columns are node ids. The third column(if exists) represents the weights.
 
 `dscps_encoded.txt`: Service id and its description.
 
@@ -51,7 +51,7 @@ Pre-trained word vectors are also needed for LSTM and TextCNN models. You can do
 
 ### Train models
 - Clone this project.
-- Download the pre-trained word vectors if you need(Only LSTM and TextCNN use the vectors). Put the file in `data/`.
+- Download the pre-trained word vectors if you need(Only LSTM and TextCNN use the vectors). Put the file into `data/`.
 - Go into the root of repo and install the required package listed in `requirements.txt` by:
 ```commandline
 pip install -r requirement.txt
