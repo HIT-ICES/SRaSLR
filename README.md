@@ -1,7 +1,7 @@
 # README
 
 ## Introduction
-This repo is the source code for paper _SRaSLR: A Novel Social Relation Aware Service Label Recommendation Model_.
+This repo is the source code for paper [_SRaSLR: A Novel Social Relation Aware Service Label Recommendation Model_](https://ieeexplore.ieee.org/document/9590240).
 
 The code is oranized as follows:
 
